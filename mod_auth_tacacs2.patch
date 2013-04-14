@@ -1,0 +1,316 @@
+--- mat/build.sh        1970-01-01 01:00:00.000000000 +0100
++++ nmat/build.sh       2013-01-27 21:10:54.025641410 +0100
+@@ -0,0 +1,9 @@
++#!/bin/sh
++aclocal
++autoheader
++autoconf
++automake --add-missing
++./configure --with-apxs=/usr/bin/apxs2
++make
++cp .libs/libauth_tacacs.so .
++echo "it should now be ready, type 'make install' to install the module"
+diff -rupN mat/configure.in nmat/configure.in
+--- mat/configure.in    2009-06-17 18:14:05.000000000 +0200
++++ nmat/configure.in   2013-01-27 17:03:04.853226658 +0100
+@@ -2,9 +2,9 @@ dnl configure.in
+ dnl Process this file with autoconf to produce a configure script.
+ 
+ AC_INIT(mod_auth_tacacs.c)
+-dnl AM_INIT_AUTOMAKE(mod_auth_tacacs,2.0.4)
+-dnl AM_CONFIG_HEADER(config.h)
+-dnl AM_MAINTAINER_MODE
++AM_INIT_AUTOMAKE(mod_auth_tacacs,2.0.4)
++AM_CONFIG_HEADER(config.h)
++AM_MAINTAINER_MODE
+ 
+ dnl Checks for programs.
+ AC_PROG_INSTALL
+@@ -152,7 +152,7 @@ else
+        GETOPT_HDRS=
+        AC_MSG_RESULT(no)
+ fi
+-AC_SUBST(GETOPT_SRCS)
++#AC_SUBST(GETOPT_SRCS)
+ AC_SUBST(GETOPT_OBJS)
+ AC_SUBST(GETOPT_HDRS)
+ 
+diff -rupN mat/Makefile.am nmat/Makefile.am
+--- Makefile.am 2013-01-27 21:25:51.669665301 +0100
++++ Makefile.am2        2013-01-27 21:32:25.221677425 +0100
+@@ -26,10 +26,10 @@
+        tacacs_testclient \
+        $(mod_as_shared)
+
+-if BUILD_WITH_APXS
++#if BUILD_WITH_APXS
+ mod_as_shared          = \
+        libauth_tacacs.so
+-endif
++#endif
+
+ libauth_tacacs_so_SRCS = \
+        mod_auth_tacacs.c \
+@@ -90,7 +90,7 @@
+        $(LINK) $(tacacs_testclient_OBJECTS) $(GETOPT_OBJS) $(LIBS)
+        rm -f $(tacacs_testclient_OBJECTS)
+
+-if BUILD_WITH_APXS
++#if BUILD_WITH_APXS
+ libauth_tacacs.so: $(libauth_tacacs_so_SOURCES)
+        rm -f $(libauth_tacacs_so_OBJECTS)
+        $(APXS) -c $(DEFS) $(CPPFLAGS) \
+@@ -99,16 +99,16 @@
+                        $(LIBS) \
+                        -o $@ $(libauth_tacacs_so_SRCS)
+        rm -f $(libauth_tacacs_so_OBJECTS)
+-endif
++#endif
+
+-if BUILD_WITH_APXS
++#if BUILD_WITH_APXS
+ install-exec-local: libauth_tacacs.so
+        $(APXS) -i -a -n auth_tacacs $^
+-else
+-install-exec-local: $(APACHE_INSTALL_FILES)
+-       mkdir -p $(APACHE_TARGET)
+-       cp -p $^ $(APACHE_TARGET)/
+-       @echo 'Use the following keywords for APACI configure:'
+-       @echo ' --activate-module=src/modules/auth_tacacs/libauth_tacacs.a'
+-       @echo ' --enable-module=auth_tacacs'
+-endif
++#else
++#install-exec-local: $(APACHE_INSTALL_FILES)
++#      mkdir -p $(APACHE_TARGET)
++#      cp -p $^ $(APACHE_TARGET)/
++#      @echo 'Use the following keywords for APACI configure:'
++#      @echo ' --activate-module=src/modules/auth_tacacs/libauth_tacacs.a'
++#      @echo ' --enable-module=auth_tacacs'
++#endif
+
+diff -rupN mat/md5.c nmat/md5.c
+--- mat/md5.c   2002-02-17 14:15:38.000000000 +0100
++++ nmat/md5.c  2013-01-27 20:31:51.581576070 +0100
+@@ -32,6 +32,7 @@ documentation and/or software.
+  */
+ 
+ /* #include "global.h" */
++#include <stdint.h>
+ #include "md5.h"
+ 
+ /* Constants for MD5Transform routine.
+diff -rupN mat/md5.h nmat/md5.h
+--- mat/md5.h   2002-02-17 14:15:38.000000000 +0100
++++ nmat/md5.h  2013-01-27 20:30:35.609573952 +0100
+@@ -53,7 +53,8 @@
+ #if defined(CISCO_MD5_MODS)
+ 
+ /* typedef a 32-bit type */
+-typedef unsigned long int UINT4;
++/*typedef unsigned long int UINT4;*/
++typedef uint32_t UINT4;
+ 
+ /* typedef a generic pointer type */
+ typedef unsigned char *POINTER;
+diff -rupN mat/mod_auth_tacacs2.c nmat/mod_auth_tacacs2.c
+--- mat/mod_auth_tacacs2.c      2009-07-13 09:23:17.000000000 +0200
++++ nmat/mod_auth_tacacs2.c     2013-01-27 20:43:37.437595763 +0100
+@@ -669,7 +669,7 @@ static int tacacs_check_auth(request_rec
+    */
+   if (auth_type == NULL)
+   {
+-    ap_log_rerror (APLOG_MARK, APLOG_NOERRNO | APLOG_ERR, r,
++    ap_log_error (APLOG_MARK, APLOG_NOERRNO | APLOG_ERR, r,
+                   "[%s] no AuthType! Please use one...", __FILE__);
+     return DECLINED;                   /* should be internal error?    */
+   }
+@@ -677,7 +677,7 @@ static int tacacs_check_auth(request_rec
+   if (strcasecmp (auth_type, "Tacacs+"))
+   {
+ #   if MOD_TACACS_DEBUG
+-    ap_log_rerror (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, r,
++    ap_log_error (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, r,
+                   "[%s]#%ld: check_auth: not for me (for %s)",
+                   __FILE__, (long) getpid (), ap_auth_type (r));
+ #   endif
+@@ -686,14 +686,14 @@ static int tacacs_check_auth(request_rec
+ #endif
+ 
+ # if MOD_TACACS_DEBUG
+-  ap_log_rerror (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, r,
++  ap_log_error (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, r,
+                 "[%s]#%ld: check_auth: %s %s",
+                 __FILE__, (long) getpid (), r->method, r->uri);
+ # endif
+ 
+     if ((res = ap_get_basic_auth_pw (r, &sent_pw))) {
+ # if MOD_TACACS_DEBUG
+-        ap_log_rerror (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, r,
++        ap_log_error (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, r,
+                 "[%s]#%ld: check_auth: failed to get password: %d",
+                 __FILE__, (long) getpid (), res);
+ # endif
+@@ -704,7 +704,7 @@ static int tacacs_check_auth(request_rec
+         (!conf->tac_sec_host || !conf->tac_sec_key)) {
+ 
+ # if MOD_TACACS_DEBUG
+-        ap_log_rerror (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, r,
++        ap_log_error (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, r,
+                 "[%s]#%ld: check_auth: no server configured",
+                 __FILE__, (long) getpid ());
+ # endif
+@@ -734,7 +734,7 @@ static int tacacs_check_auth(request_rec
+        }
+        tac_close(session);
+        if (result == OK) {
+-/*         ap_log_rerror (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, r,
++/*         ap_log_error (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, r,
+                                 "[%s]#%ld: check_auth: %s %s SUCESS",
+                                 __FILE__, (long) getpid (), r->method, r->uri); */
+        } else {
+diff -rupN mat/mod_auth_tacacs.c nmat/mod_auth_tacacs.c
+--- mat/mod_auth_tacacs.c       2003-12-05 22:44:26.000000000 +0100
++++ nmat/mod_auth_tacacs.c      2013-01-27 20:50:02.725606508 +0100
+@@ -136,7 +136,7 @@
+  */
+ static char const rcsid [] = "$Id: mod_auth_tacacs.c,v 1.2 2003/12/05 21:44:26 ryl Exp $";
+ 
+-#define APACHE2 0
++#define APACHE2 1 
+ 
+ #ifdef HAVE_CONFIG_H
+ #include "config.h"
+@@ -150,7 +150,6 @@ static char const rcsid [] = "$Id: mod_a
+ #if APACHE2
+ #include "apr_hooks.h"
+ #include "apr.h"
+-#include "apr_compat.h"
+ #include "apr_lib.h"
+ #include "apr_strings.h"
+ #include "apr_buckets.h"
+@@ -281,8 +280,8 @@ static apr_pool_t *auth_tac_pool = NULL;
+ void *tacacs_create_conf(apr_pool_t *p, char *d) {
+   tacacs_conf  *new_conf;
+ #if MOD_TACACS_DEBUG
+-  ap_log_error (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, 0, p,
+-                "#%ld: tacacs_create_conf",(long) getpid ());
++  //ap_log_error (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, 0, p,
++//              "#%ld: tacacs_create_conf",(long) getpid ());
+ #endif
+   /* We create a new config */
+   new_conf = (tacacs_conf *) apr_pcalloc (p, sizeof (tacacs_conf));
+@@ -378,9 +377,9 @@ static void *tacacs_create_sconf (pool *
+   tacacs_sconf *sconf;
+ 
+ # if MOD_TACACS_DEBUG
+-  ap_log_error (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, s,
+-                "#%ld: tacacs_create_sconf",
+-                (long) getpid ());
++  //ap_log_error (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, s,
++//              "#%ld: tacacs_create_sconf",
++//              (long) getpid ());
+ # endif
+ 
+   /*
+@@ -434,9 +433,9 @@ static const char *tacacs_cfg_pri_host (
+   sconf->tac_pri_host = ap_pstrdup (cmd->pool, arg);
+ 
+ # if MOD_TACACS_DEBUG
+-  ap_log_error (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, cmd->server,
+-                "#%ld: tacacs_cfg_pri_host: %s",
+-                (long) getpid (), sconf->tac_pri_host);
++  //ap_log_error (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, cmd->server,
++//              "#%ld: tacacs_cfg_pri_host: %s",
++//              (long) getpid (), sconf->tac_pri_host);
+ # endif
+ 
+   /*
+@@ -497,9 +496,9 @@ static const char *tacacs_cfg_sec_host (
+   sconf->tac_sec_host = ap_pstrdup (cmd->pool, arg);
+ 
+ # if MOD_TACACS_DEBUG
+-  ap_log_error (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, cmd->server,
+-                __FILE__"#%ld: tacacs_cfg_sec_host: %s",
+-                (long) getpid (), sconf->tac_sec_host);
++  //ap_log_error (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, cmd->server,
++//              __FILE__"#%ld: tacacs_cfg_sec_host: %s",
++//              (long) getpid (), sconf->tac_sec_host);
+ # endif
+ 
+   /*
+@@ -652,15 +651,15 @@ static int tacacs_check_auth(request_rec
+    */
+   if (auth_type == NULL)
+   {
+-    ap_log_rerror (APLOG_MARK, APLOG_NOERRNO | APLOG_ERR, r,
+-                  "[%s] no AuthType! Please use one...", __FILE__);
++    //ap_log_rerror (APLOG_MARK, APLOG_NOERRNO | APLOG_ERR, r,
++//                "[%s] no AuthType! Please use one...", __FILE__);
+     return DECLINED;                   /* should be internal error?    */
+   }
+ #if 0
+   if (strcasecmp (auth_type, "Tacacs+"))
+   {
+ #   if MOD_TACACS_DEBUG
+-    ap_log_rerror (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, r,
++    ap_log_rerror (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, r,
+                   "[%s]#%ld: check_auth: not for me (for %s)",
+                   __FILE__, (long) getpid (), ap_auth_type (r));
+ #   endif
+@@ -669,16 +668,16 @@ static int tacacs_check_auth(request_rec
+ #endif
+ 
+ # if MOD_TACACS_DEBUG
+-  ap_log_rerror (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, r,
+-                "[%s]#%ld: check_auth: %s %s",
+-                __FILE__, (long) getpid (), r->method, r->uri);
++  //ap_log_rerror (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, r,
++//              "[%s]#%ld: check_auth: %s %s",
++//              __FILE__, (long) getpid (), r->method, r->uri);
+ # endif
+ 
+     if ((res = ap_get_basic_auth_pw (r, &sent_pw))) {
+ # if MOD_TACACS_DEBUG
+-        ap_log_rerror (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, r,
+-                "[%s]#%ld: check_auth: failed to get password: %d",
+-                __FILE__, (long) getpid (), res);
++        //ap_log_rerror (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, r,
++//              "[%s]#%ld: check_auth: failed to get password: %d",
++//              __FILE__, (long) getpid (), res);
+ # endif
+        return res;
+     }
+@@ -690,9 +689,9 @@ static int tacacs_check_auth(request_rec
+        (!sconf->tac_sec_host || !sconf->tac_sec_key)) {
+ #endif
+ # if MOD_TACACS_DEBUG
+-        ap_log_rerror (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, r,
+-                "[%s]#%ld: check_auth: no server configured",
+-                __FILE__, (long) getpid ());
++       // ap_log_rerror (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, r,
++       //       "[%s]#%ld: check_auth: no server configured",
++       //       __FILE__, (long) getpid ());
+ # endif
+        return DECLINED;
+     }
+@@ -727,9 +726,9 @@ static int tacacs_check_auth(request_rec
+        }
+        tac_close(session);
+        if (result == OK) {
+-           ap_log_rerror (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, r,
+-                                "[%s]#%ld: check_auth: %s %s SUCESS",
+-                                __FILE__, (long) getpid (), r->method, r->uri);
++           //ap_log_rerror (APLOG_MARK, APLOG_NOERRNO | APLOG_DEBUG, r,
++       //                       "[%s]#%ld: check_auth: %s %s SUCESS",
++       //                       __FILE__, (long) getpid (), r->method, r->uri);
+        } else {
+            tac_error("mod_auth_tacacs: authentication failed for: %s",
+                    username);
+diff -rupN mat/run_apxs.sh nmat/run_apxs.sh
+--- mat/run_apxs.sh     2009-06-17 18:14:06.000000000 +0200
++++ nmat/run_apxs.sh    2013-01-27 18:47:12.925401156 +0100
+@@ -1,3 +1,3 @@
+ #!/bin/sh
+-apxs -i -a -c mod_auth_tacacs2.c
++apxs2 -i -a -c mod_auth_tacacs2.c
+

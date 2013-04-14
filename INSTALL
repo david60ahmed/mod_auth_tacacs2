@@ -1,0 +1,6 @@
+cvs -d:pserver:anonymous@mod-auth-tacacs.cvs.sourceforge.net:/cvsroot/mod-auth-tacacs login 
+cvs -z3 -d:pserver:anonymous@mod-auth-tacacs.cvs.sourceforge.net:/cvsroot/mod-auth-tacacs co -P mod_auth_tacacs
+cd mod_auth_tacacs
+wget http://www.convergence.cx/scripts/mod_auth_tacacs2.patch
+patch --ignore-whitespace < mod_auth_tacacs2.patch
+make install
