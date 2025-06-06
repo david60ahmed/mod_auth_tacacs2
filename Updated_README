@@ -8,7 +8,7 @@ Module can be compiled in two ways.
 1. via build.sh file [make sure check the apxs binary file path] and run make install [in this case .so file name is different]
 2. install by ./run_apxs.sh script [also set correct apxs binary path.] [in this case .so file name is different]
 Config for Web server as per mod_auth_tacacs module 
-
+[Code in this repository is without the patch2. Please apply it.]
 -------------------------------------------
 INSTALL
 
