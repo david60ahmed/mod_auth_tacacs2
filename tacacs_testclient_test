@@ -1,0 +1,11 @@
+#! /bin/sh
+set -x
+exec 2>&1
+make tacacs_testclient
+CLIENT="./tacacs_testclient -v -k INSERT_LOCALHOST_KEY_HERE"
+
+$CLIENT authen                      ascii_login       port_name always ALWAYS       ;test $?
+$CLIENT authen                      ascii_login       port_name always ALWAYSx      ;test $?
+$CLIENT author       tacacsplus min ascii_login login port_name always service=slip ;test $?
+$CLIENT author       tacacsplus min ascii_login login port_name never  service=slip ;test $?
+$CLIENT account stop tacacsplus min ascii_login login port_name never               ;test $?

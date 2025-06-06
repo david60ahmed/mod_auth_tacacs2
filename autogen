@@ -1,0 +1,16 @@
+#! /bin/sh
+set -ex
+rm -rf `cat .cvsignore` `find -type l -maxdepth 1`
+if [ "$1" = clean ];then exit;fi
+aclocal
+# libtoolize --force
+autoheader
+automake --add-missing
+autoheader
+autoconf
+if [ -f "$HOME/.mod_auth_tacacs.autogen" ];then
+	source "$HOME/.mod_auth_tacacs.autogen"
+else
+        CONFDEFS="--with-included-getopt --with-apxs"
+fi
+./configure --enable-maintainer-mode $CONFDEFS

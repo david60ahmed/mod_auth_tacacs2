@@ -1,0 +1,83 @@
+# Makefile.tmpl of mod_auth_tacacs
+# derived from mod_ssl Makefile.tmpl
+
+LIB=libauth_tacacs.$(LIBEXT)
+
+MOD_AUTH_TACACS_CPPFLAGS=-DHAVE_CONFIG_H
+
+# Keep _OBJECTS & _OBJECTS_PIC in sync with Makefile.am !
+# See comments in Makefile.am before touching any names,
+# like "libauth_tacacs", "auth_tacacs_module" etc.
+
+libauth_tacacs_OBJECTS = \
+	mod_auth_tacacs.o \
+	mod_tac_utils.o \
+	mod_tac_packet.o \
+	mod_tac_authen.o \
+	mod_tac_author.o \
+	mod_tac_account.o \
+	md5.o
+
+libauth_tacacs_OBJECTS_PIC = \
+	mod_auth_tacacs.lo \
+	mod_tac_utils.lo \
+	mod_tac_packet.lo \
+	mod_tac_authen.lo \
+	mod_tac_author.lo \
+	mod_tac_account.lo \
+	md5.lo
+
+
+all: lib
+
+lib: $(LIB)
+
+libauth_tacacs.a: $(libauth_tacacs_OBJECTS)
+	rm -f $@
+	ar cr $@ $^
+	$(RANLIB) $@
+
+libauth_tacacs.so: $(libauth_tacacs_OBJECTS_PIC)
+	rm -f $@
+	$(LD_SHLIB) $(LDFLAGS_SHLIB) -o $@ $^ $(LIBS_SHLIB) 
+
+.SUFFIXES: .o .lo
+
+.c.o:
+	$(CC) -c $(INCLUDES) $(CFLAGS) $(MOD_AUTH_TACACS_CPPFLAGS) $<
+
+.c.lo:
+	$(CC) -c $(INCLUDES) $(CFLAGS) $(CFLAGS_SHLIB) $(MOD_AUTH_TACACS_CPPFLAGS) $< && mv $*.o $*.lo
+
+clean:
+	rm -f $(libauth_tacacs_OBJECTS) $(libauth_tacacs_OBJECTS_PIC)
+	rm -f libauth_tacacs.a libauth_tacacs.so
+	rm -f *.lo *.slo
+
+realclean: clean
+
+distclean: clean
+	-rm -f Makefile
+
+##
+##  DEVELOPER AREA
+##  We really don't expect end users to use these targets!
+##
+
+depend:
+	cp Makefile.tmpl Makefile.tmpl.bak \
+	    && sed -ne '1,/^# DO NOT REMOVE/p' Makefile.tmpl > Makefile.new \
+	    && gcc -MM $(INCLUDES) $(CFLAGS) $(SSL_CFLAGS) *.c >> Makefile.new \
+	    && sed -e '1,$$s; $(INCDIR)/; $$(INCDIR)/;g' \
+	           -e '1,$$s; $(OSDIR)/; $$(OSDIR)/;g' \
+	           -e '1,$$s;^\([a-z0-9_]*\)\.o:;\1.o \1.lo:;g' Makefile.new \
+		> Makefile.tmpl \
+	    && rm Makefile.new
+
+##
+##  DEPENDENCY AREA
+##
+
+$(libauth_tacacs_OBJECTS) $(libauth_tacacs_OBJECTS_PIC) : Makefile
+
+# DO NOT REMOVE

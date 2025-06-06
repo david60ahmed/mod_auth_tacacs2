@@ -1,0 +1,10 @@
+This is TACACS+ authentication module for Apache 1.3.x and 2.0.x
+
+This module has been originally writtent by Roman Volkov (rv@kht.ru)
+and is currently maintained by Ronan-Yann Lorin (ryl@free.fr).
+
+For information/support/lastest distrib go to
+http://sourceforge.net/projects/mod-auth-tacacs/
+
+The intent was to use tacacs+ as one source of authentication
+information across the network.

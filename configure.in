@@ -1,0 +1,169 @@
+dnl configure.in
+dnl Process this file with autoconf to produce a configure script.
+
+AC_INIT(mod_auth_tacacs.c)
+dnl AM_INIT_AUTOMAKE(mod_auth_tacacs,2.0.4)
+dnl AM_CONFIG_HEADER(config.h)
+dnl AM_MAINTAINER_MODE
+
+dnl Checks for programs.
+AC_PROG_INSTALL
+AC_PROG_CC
+AC_PROG_RANLIB
+
+dnl accomodate Solaris
+AC_SEARCH_LIBS(gethostbyname, nsl)
+AC_SEARCH_LIBS(htonl, socket)
+AC_SEARCH_LIBS(inet_aton, resolv)
+
+dnl Checks for header files.
+AC_HEADER_STDC
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+
+
+# The following Apache module code stolen and modified from php-4
+
+if test -n "$with_apache" -a -n "$with_apxs"
+then
+	AC_MSG_ERROR(--with-apache and --with-apxs cannot be used together)
+fi
+
+AC_MSG_CHECKING(for Apache module support via DSO through APXS)
+AC_ARG_WITH(apxs,
+[  --with-apxs[=FILE]      Build shared Apache module. FILE is the optional
+                          pathname to the Apache apxs tool; defaults to "apxs".],[
+	if test "$withval" = yes
+	then
+		APXS=apxs
+		if $APXS -q CFLAGS >/dev/null 2>&1; then
+		  :
+		else
+		  if test -x /usr/sbin/apxs ; then #SUSE 6.x 
+		    APXS=/usr/sbin/apxs
+		  fi
+		fi
+	else
+		APXS="$withval"
+	fi
+
+		if $APXS -q CFLAGS >/dev/null 2>&1; then
+			:
+		else
+			AC_MSG_RESULT()
+			$APXS
+			AC_MSG_RESULT([Sorry, I was not able to successfully run APXS.  Possible reasons:])
+			AC_MSG_RESULT([1.  Perl is not installed;])
+			AC_MSG_RESULT([2.  Apache was not compiled with DSO support (--enable-module=so);])
+			AC_MSG_RESULT([3.  'apxs' is not in your path.])
+			AC_MSG_ERROR([APXS not usable.]) 
+		fi 
+
+	APXS_INCLUDEDIR=`$APXS -q INCLUDEDIR`
+	APXS_CFLAGS=`$APXS -q CFLAGS`
+	for flag in $APXS_CFLAGS; do
+		case $flag in
+		-D*) CPPFLAGS="$CPPFLAGS $flag";;
+		esac
+	done
+	CPPFLAGS="$CPPFLAGS -I $APXS_INCLUDEDIR"
+	if test -z "`$APXS -q LD_SHLIB`" || test "`$APXS -q LIBEXECDIR`" = modules
+	then
+		AC_MSG_WARN(Your apxs seems to be broken (CFG_LD_SHLIB probably not defined))
+	fi
+	AC_MSG_RESULT(yes)
+],[
+	AC_MSG_RESULT(no)
+])
+
+AC_MSG_CHECKING(for Apache module support)
+AC_ARG_WITH(apache,
+[  --with-apache[=DIR]     Build Apache module. DIR is the top-level Apache
+                          build directory, defaults to /usr/local/etc/httpd.],[
+	if test "$withval" = yes
+	then
+	  # Apache's default directory
+	  withval=/usr/local/apache
+	fi
+	if test "$withval" '!=' no
+	then
+
+		# For Apache 1.3.x
+		if test -f $withval/src/include/httpd.h; then
+			APACHE_INCLUDE="-I$withval/src/include -I$withval/src/os/unix"
+			CPPFLAGS="$CPPFLAGS $APACHE_INCLUDE"
+			APACHE_TARGET="$withval/src/modules/auth_tacacs"
+			if test '!' -d "$APACHE_TARGET"
+			then
+				mkdir "$APACHE_TARGET"
+			fi
+			AC_MSG_RESULT(yes - Apache 1.3.x)
+		else
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR(Invalid Apache directory - unable to find httpd.h under $withval)
+		fi
+	else
+		AC_MSG_RESULT(no)
+	fi
+],[
+	AC_MSG_RESULT(no)
+])
+
+dnl AM_CONDITIONAL(BUILD_WITH_APXS,[ test -n "$APXS" ])
+
+AC_SUBST(APACHE_TARGET)
+AC_SUBST(APXS)
+
+dnl Checks for library functions.
+
+AC_MSG_CHECKING([whether included getopt is requested])
+AC_ARG_WITH(included-getopt,
+[  --with-included-getopt  Use included getopt(3) [default=auto]],
+		 with_getopt=$withval, with_getopt=auto)
+AC_MSG_RESULT($with_getopt)
+AC_CHECK_FUNCS(getopt getopt_long)
+AC_CHECK_HEADERS(getopt.h)
+AC_MSG_CHECKING(whether to use included getopt)
+use_local_getopt=false
+if test "$ac_cv_func_getopt" = yes -a "$ac_cv_func_getopt_long" = yes
+then
+	if test "$with_getopt" = yes
+	then
+		use_local_getopt=true
+	fi
+else
+	if test "$with_getopt" = no
+	then
+		AC_MSG_ERROR([Your system doesn't have getopt and you forbidden me to use my own!])
+	fi
+	use_local_getopt=true
+fi
+if $use_local_getopt
+then
+	GETOPT_SRCS="getopt.c getopt1.c"
+	GETOPT_OBJS="getopt.o getopt1.o"
+	GETOPT_HDRS="getopt.h"
+	AC_DEFINE(USE_LOCAL_GETOPT)
+	AC_MSG_RESULT(yes)
+else
+	GETOPT_SRCS=
+	GETOPT_OBJS=
+	GETOPT_HDRS=
+	AC_MSG_RESULT(no)
+fi
+AC_SUBST(GETOPT_SRCS)
+AC_SUBST(GETOPT_OBJS)
+AC_SUBST(GETOPT_HDRS)
+
+dnl Checks for header files.
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+
+if test "$USE_MAINTAINER_MODE" = yes -a "$GCC" = yes
+then
+	CFLAGS="$CFLAGS -ggdb3 -Wall"
+fi
+
+AC_OUTPUT(Makefile)

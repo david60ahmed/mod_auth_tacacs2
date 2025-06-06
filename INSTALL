@@ -1,6 +1,46 @@
-cvs -d:pserver:anonymous@mod-auth-tacacs.cvs.sourceforge.net:/cvsroot/mod-auth-tacacs login 
-cvs -z3 -d:pserver:anonymous@mod-auth-tacacs.cvs.sourceforge.net:/cvsroot/mod-auth-tacacs co -P mod_auth_tacacs
-cd mod_auth_tacacs
-wget http://www.convergence.cx/scripts/mod_auth_tacacs2.patch
-patch --ignore-whitespace < mod_auth_tacacs2.patch
+INSTALL
+
+The standard way:
+tar -xzf /path/to/mod_auth_tacacs-2.0.x.tgz
+cd mod_auth_tacacs-2.0.x
+./configure
+make
 make install
+
+For use add into your Apache configuration:
+
+LoadModule auth_tacacs_module	libexec/libauth_tacacs.so
+
+<IfModule mod_auth_tacacs.c>
+  <Directory /usr/local/apache/htdocs/securedir>
+    AuthName www
+    AuthType Basic
+    Tacacs_Pri_Host tac1.domain.com
+    Tacacs_Pri_key Key_1
+    Tacacs_Pri_Port 49
+    Tacacs_Sec_Host tac2.domain.com
+    Tacacs_Sec_Key Key_2
+    Tacacs_Sec_Port 49
+    Tacacs_Authorization on
+    Tacacs_Accounting    on
+    Auth_Tacacs_Authoritative on
+    <limit GET POST HEAD>
+      order deny,allow
+      allow from all
+      require valid-user
+    </limit>
+  </Directory>
+</IfModule>
+
+Or you can use .htaccess for store (comment require valid-user):
+    require user username1 username2
+
+In tacacs+ configuration:
+    in file tac_plus.conf add:
+
+	user=www-admin {
+	    default service=deny
+	    service=connection {}
+	    login=cleartext Password
+	}
+

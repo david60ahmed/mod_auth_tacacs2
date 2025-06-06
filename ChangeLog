@@ -1,0 +1,36 @@
+Changes to mod_auth_tacacs
+
+2.0.0
+mod_auth_tacacs and libtacacs merged. Support for autorisation and accounting
+added.
+no libtacacs directory, now all tacacs+ code inside mod_auth_tacacs
+no server functions in tacacs+ part: only client functions
+
+changes in configuration
+support primary and secondary tacacs+ servers
+authorization code (service=connection)
+accounting code (start-only packets)
+
+Makefile now for compile as DSO
+(fix Makefile for your apxs location)
+
+1.0.3
+Auth_Tacacs_Host now accept both a hostname or an IP address. Fixed bug #2. 
+
+1.0.2
+Logging changed. libtacacs error goes to syslog. Failure are reported to 
+Apache log files.
+Fixed bug #1. 
+
+1.0.1
+Updated for new libtacacs
+tacacs_module renamed to tacacs_auth_module 
+
+1.0
+Some cleanup to libtacacs. 
+
+0.9
+First stable release. 
+
+0.8
+Original release by Roman Volkoff 
