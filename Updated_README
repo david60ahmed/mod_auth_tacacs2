@@ -7,7 +7,55 @@ patch --ignore-whitespace < mod_auth_tacacs2.patch,
 Module can be compiled in two ways. 
 1. via build.sh file [make sure check the apxs binary file path] and run make install [in this case .so file name is different]
 2. install by ./run_apxs.sh script [also set correct apxs binary path.] [in this case .so file name is different]
+Config for Web server as per mod_auth_tacacs module 
 
+-------------------------------------------
+INSTALL
+
+The standard way:
+tar -xzf /path/to/mod_auth_tacacs-2.0.x.tgz
+cd mod_auth_tacacs-2.0.x
+./configure
+make
+make install
+
+For use add into your Apache configuration:
+
+LoadModule auth_tacacs_module	libexec/libauth_tacacs.so
+
+<IfModule mod_auth_tacacs.c>
+  <Directory /usr/local/apache/htdocs/securedir>
+    AuthName www
+    AuthType Basic
+    Tacacs_Pri_Host tac1.domain.com
+    Tacacs_Pri_key Key_1
+    Tacacs_Pri_Port 49
+    Tacacs_Sec_Host tac2.domain.com
+    Tacacs_Sec_Key Key_2
+    Tacacs_Sec_Port 49
+    Tacacs_Authorization on
+    Tacacs_Accounting    on
+    Auth_Tacacs_Authoritative on
+    <limit GET POST HEAD>
+      order deny,allow
+      allow from all
+      require valid-user
+    </limit>
+  </Directory>
+</IfModule>
+
+Or you can use .htaccess for store (comment require valid-user):
+    require user username1 username2
+
+In tacacs+ configuration:
+    in file tac_plus.conf add:
+
+	user=www-admin {
+	    default service=deny
+	    service=connection {}
+	    login=cleartext Password
+	}
+------------------------------------------------
 [downloaded code is also uploaded here for mod_auth_tacacs]
 
 
