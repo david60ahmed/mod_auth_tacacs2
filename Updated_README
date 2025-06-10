@@ -3,12 +3,7 @@ cvs -z3 -d:pserver:anonymous@mod-auth-tacacs.cvs.sourceforge.net:/cvsroot/mod-au
 cd mod_auth_tacacs
 wget http://www.convergence.cx/scripts/mod_auth_tacacs2.patch [if this link does not work, download .patch file from the original author repo]
 patch --ignore-whitespace < mod_auth_tacacs2.patch,
-[Do this step, first set the path of apxs binary in the build.sh file and also in the run_apxs.sh file]
-Module can be compiled in two ways. 
-1. via build.sh file [make sure check the apxs binary file path] and run make install [in this case .so file name is different]
-2. install by ./run_apxs.sh script [also set correct apxs binary path.] [in this case .so file name is different]
-Config for Web server as per mod_auth_tacacs module 
-[Code in this repository is without the patch2. Please apply it.]
+
 -------------------------------------------
 INSTALL
 
